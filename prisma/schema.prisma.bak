@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum EmpStatus {
+  PROBATION
+  FULL_TIME
+  CONTRACT
+  INTERN
+}
+
+enum DocStatus {
+  PENDING
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  UNPAID
+  MATERNITY
+  PATERNITY
+}
+
+enum CandidateStatus {
+  NEW
+  SCREENING
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+}
+
+// 1. Organization & Employee
+model Department {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  employees Employee[]
+  createdAt DateTime   @default(now())
+}
+
+model Position {
+  id        String     @id @default(cuid())
+  title     String     @unique
+  employees Employee[]
+  candidates Candidate[]
+  createdAt DateTime   @default(now())
+}
+
+model Employee {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String?   // For login
+  role         UserRole  @default(EMPLOYEE)
+  
+  // Basic Info
+  firstName    String
+  lastName     String
+  khmerName    String?
+  gender       Gender?
+  dob          DateTime?
+  address      String?
+  phone        String?
+  photoUrl     String?
+  
+  // Work Info
+  employeeId   String    @unique // Custom ID like EMP001
+  joinDate     DateTime
+  status       EmpStatus @default(PROBATION)
+  
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  positionId   String?
+  position     Position?   @relation(fields: [positionId], references: [id])
+  
+  // Reporting Line
+  managerId    String?
+  manager      Employee?   @relation("ReportingLine", fields: [managerId], references: [id])
+  directReports Employee[] @relation("ReportingLine")
+
+  // Related Data
+  documents    EmployeeDocument[]
+  attendances  Attendance[]
+  leaves       LeaveRequest[]
+  payrolls     Payroll[]
+  ewaRequests  EWARequest[]
+  reviewsWait  PerformanceReview[] @relation("Reviewer")
+  reviewsRec   PerformanceReview[] @relation("Reviewee")
+  courseProgress CourseProgress[]
+  
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model EmployeeDocument {
+  id          String    @id @default(cuid())
+  employeeId  String
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  title       String    // e.g. "National ID", "Degree"
+  fileUrl     String
+  status      DocStatus @default(SUBMITTED)
+  uploadedAt  DateTime  @default(now())
+}
+
+// 2. Recruitment
+model Candidate {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  resumeUrl   String?
+  positionId  String?
+  position    Position? @relation(fields: [positionId], references: [id])
+  appliedPosition String? // String fallback if position not linked
+  status      CandidateStatus @default(NEW)
+  appliedAt   DateTime @default(now())
+}
+
+// 3. Attendance & Scheduling
+model Shift {
+  id        String   @id @default(cuid())
+  name      String   // "Morning", "Night"
+  startTime DateTime // Changed to DateTime for easier management, or create separate Time type handling logic
+  endTime   DateTime 
+  employeeId String? // If assigned specifically to an employee
+  attendances Attendance[]
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  date        DateTime @db.Date
+  
+  shiftId     String?
+  shift       Shift?   @relation(fields: [shiftId], references: [id])
+  
+  checkInTime DateTime?
+  checkInLat  Float?
+  checkInLng  Float?
+  checkInLoc  String?
+  checkInPhoto String?
+
+  checkOutTime DateTime?
+  checkOutLat  Float?
+  checkOutLng  Float?
+  checkOutLoc  String?
+  checkOutPhoto String?
+  
+  workHours   Float?
+
+  status      AttendanceStatus @default(ABSENT)
+  isLate      Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([employeeId, date])
+}
+
+model LeaveRequest {
+  id          String      @id @default(cuid())
+  employeeId  String
+  employee    Employee    @relation(fields: [employeeId], references: [id])
+  
+  leaveTypeId String?
+  leaveType   LeaveType? // Use Enum or Relation? API uses `leaveTypeId`. schema used `type String`.
+                           // I'll stick to simple Enum or String for now to match current API which used `leaveTypeId` but schema had `type`.
+                           // Actually API `POST` used `leaveTypeId`. I'll create a LeaveType model if needed or use Enum.
+                           // Given complexity, let's use `type LeaveType` (Enum) and map from ID in code or just use String in API.
+                           // I'll add `leaveType String` to match Enum.
+  type        LeaveType
+  
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      LeaveStatus @default(PENDING)
+  approvedBy  String?     // Manager ID
+  createdAt   DateTime    @default(now())
+}
+
+// 4. Payroll & EWA
+model Payroll {
+  id            String   @id @default(cuid())
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id])
+  month         Int
+  year          Int
+  periodStart   DateTime
+  periodEnd     DateTime
+  
+  baseSalary    Decimal  @db.Decimal(10, 2)
+  allowances    Decimal  @default(0) @db.Decimal(10, 2) // Added missing
+  otPay         Decimal  @default(0) @db.Decimal(10, 2)
+  bonus         Decimal  @default(0) @db.Decimal(10, 2)
+  deductions    Decimal  @default(0) @db.Decimal(10, 2)
+  tax           Decimal  @default(0) @db.Decimal(10, 2)
+  netSalary     Decimal  @db.Decimal(10, 2)
+  
+  status        String   @default("DRAFT") // PAID, DRAFT
+  generatedAt   DateTime @default(now())
+
+  @@unique([employeeId, month, year])
+}
+
+model EWARequest {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  requestedAt DateTime @default(now())
+}
+
+// 5. Training / E-Learning
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  isMandatory Boolean  @default(false)
+  thumbnailUrl String?
+  modules     Module[]
+  progress    CourseProgress[]
+  createdAt   DateTime @default(now())
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  title       String
+  type        String   // VIDEO, PDF, QUIZ
+  videoUrl    String?
+  content     String?  // Text content or PDF url
+  duration    String?
+  order       Int
+}
+
+model CourseProgress {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  isCompleted Boolean  @default(false)
+  completedAt DateTime?
+  
+  @@unique([employeeId, courseId])
+}
+
+// 6. Performance
+model PerformanceReview {
+  id          String   @id @default(cuid())
+  reviewerId  String
+  reviewer    Employee @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId  String
+  reviewee    Employee @relation("Reviewee", fields: [revieweeId], references: [id])
+  
+  period      String   // "Q1 2026", "Jan 2026"
+  rating      String   // Good, Average, Needs Improvement
+  comments    String?
+  
+  createdAt   DateTime @default(now())
+}

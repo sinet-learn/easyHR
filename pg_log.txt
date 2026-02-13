@@ -1,0 +1,3 @@
+﻿Testing connection to: aws-1-ap-south-1.pooler.supabase.com:5432/postgres
+Successfully connected to Postgres!
+Current time from DB: { now: 2026-02-12T10:37:35.827Z }
