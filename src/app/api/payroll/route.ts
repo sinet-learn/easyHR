@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         const tax = baseSalary * 0.10; // 10% tax mock
 
         // Calculate attendance-based deductions or OT here
-        const totalWorkHours = employee.attendances.reduce((sum, att) => sum + (att.workHours || 0), 0);
+        const totalWorkHours = employee.attendances.reduce((sum: number, att: any) => sum + (att.workHours || 0), 0);
         // e.g. if totalWorkHours < required, deduct...
 
         const netSalary = baseSalary + allowances - deductions - tax;
