@@ -32,7 +32,8 @@ export async function POST(request: Request) {
         const leave = await prisma.leaveRequest.create({
             data: {
                 employeeId: body.employeeId,
-                leaveTypeId: body.leaveTypeId, // Make sure to seed LeaveTypes first or handle this
+                leaveTypeId: body.leaveTypeId,
+                type: (body.type || body.leaveTypeId || 'ANNUAL') as any, // Cast to any to handle string to enum mapping
                 startDate: new Date(body.startDate),
                 endDate: new Date(body.endDate),
                 reason: body.reason,

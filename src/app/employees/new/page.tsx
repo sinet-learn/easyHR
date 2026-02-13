@@ -8,7 +8,7 @@ export default async function NewEmployeePage() {
     const departments = await prisma.department.findMany({ select: { id: true, name: true } });
     const positions = await prisma.position.findMany({ select: { id: true, title: true } });
     const managers = await prisma.employee.findMany({
-        where: { role: { in: ['OWNER', 'MANAGER'] } },
+        where: { role: { in: ['ADMIN', 'MANAGER'] } },
         select: { id: true, firstName: true, lastName: true }
     });
 

@@ -81,6 +81,9 @@ export async function POST(request: Request) {
             }
 
             // Calculate work hours
+            if (!record.checkInTime) {
+                return NextResponse.json({ error: 'Check-in time is missing' }, { status: 400 });
+            }
             const checkInTime = new Date(record.checkInTime);
             const durationMs = today.getTime() - checkInTime.getTime();
             const workHours = durationMs / (1000 * 60 * 60);

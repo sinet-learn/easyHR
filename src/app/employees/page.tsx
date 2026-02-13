@@ -88,7 +88,7 @@ export default async function EmployeesPage() {
                                             <p className="text-xs text-gray-500">{emp.department?.name || 'No Dept'}</p>
                                         </td>
                                         <td>
-                                            <span className={`badge ${emp.status === 'ACTIVE' ? 'badge-active' :
+                                            <span className={`badge ${emp.status === 'FULL_TIME' ? 'badge-active' :
                                                 emp.status === 'PROBATION' ? 'bg-blue-100 text-blue-700' :
                                                     'badge-inactive'
                                                 }`}>

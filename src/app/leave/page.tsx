@@ -2,7 +2,13 @@ import LeaveDashboard from '@/components/leave/LeaveDashboard';
 import prisma from '@/lib/prisma';
 
 export default async function LeavePage() {
-    const leaveTypes = await prisma.leaveType.findMany();
+    const leaveTypes = [
+        { id: 'ANNUAL', name: 'Annual Leave' },
+        { id: 'SICK', name: 'Sick Leave' },
+        { id: 'UNPAID', name: 'Unpaid Leave' },
+        { id: 'MATERNITY', name: 'Maternity Leave' },
+        { id: 'PATERNITY', name: 'Paternity Leave' },
+    ];
 
     return (
         <div>

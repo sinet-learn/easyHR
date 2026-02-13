@@ -25,7 +25,7 @@ export async function POST(request: Request) {
         const employee = await prisma.employee.findUnique({
             where: { id: employeeId },
             include: {
-                attendance: {
+                attendances: {
                     where: {
                         date: {
                             gte: new Date(year, month - 1, 1),
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         const tax = baseSalary * 0.10; // 10% tax mock
 
         // Calculate attendance-based deductions or OT here
-        const totalWorkHours = employee.attendance.reduce((sum, att) => sum + (att.workHours || 0), 0);
+        const totalWorkHours = employee.attendances.reduce((sum, att) => sum + (att.workHours || 0), 0);
         // e.g. if totalWorkHours < required, deduct...
 
         const netSalary = baseSalary + allowances - deductions - tax;
@@ -54,6 +54,8 @@ export async function POST(request: Request) {
         const payroll = await prisma.payroll.create({
             data: {
                 employeeId,
+                month,
+                year,
                 periodStart: new Date(year, month - 1, 1),
                 periodEnd: new Date(year, month, 0), // Last day of month
                 baseSalary,

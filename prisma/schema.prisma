@@ -121,6 +121,7 @@ model Employee {
   reviewsWait  PerformanceReview[] @relation("Reviewer")
   reviewsRec   PerformanceReview[] @relation("Reviewee")
   courseProgress CourseProgress[]
+  shifts       Shift[]
   
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -157,7 +158,8 @@ model Shift {
   name      String   // "Morning", "Night"
   startTime DateTime // Changed to DateTime for easier management, or create separate Time type handling logic
   endTime   DateTime 
-  employeeId String? // If assigned specifically to an employee
+  employeeId String? 
+  employee   Employee? @relation(fields: [employeeId], references: [id])
   attendances Attendance[]
 }
 
