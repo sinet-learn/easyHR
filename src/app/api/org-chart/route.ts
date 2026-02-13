@@ -16,20 +16,19 @@ export async function GET() {
         });
 
         // Build tree structure
-        const employeeMap = new Map();
+        const employeeMap = new Map<string, any>();
         const rootNodes: any[] = [];
 
-        employees.forEach(emp => {
+        employees.forEach((emp: any) => {
             employeeMap.set(emp.id, { ...emp, children: [] });
         });
 
-        employees.forEach(emp => {
+        employees.forEach((emp: any) => {
             if (emp.managerId) {
                 const manager = employeeMap.get(emp.managerId);
                 if (manager) {
                     manager.children.push(employeeMap.get(emp.id));
                 } else {
-                    // Manager not found (maybe inactive?), treat as root or handle error
                     rootNodes.push(employeeMap.get(emp.id));
                 }
             } else {
