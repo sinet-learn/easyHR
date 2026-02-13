@@ -3,6 +3,8 @@ import EmployeeForm from '@/components/employees/EmployeeForm';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewEmployeePage() {
     // Fetch data for dropdowns
     const departments = await prisma.department.findMany({ select: { id: true, name: true } });

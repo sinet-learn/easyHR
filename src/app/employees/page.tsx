@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button';
 
 
 
+export const dynamic = 'force-dynamic';
+
 export default async function EmployeesPage() {
     const employees = await prisma.employee.findMany({
         include: {
